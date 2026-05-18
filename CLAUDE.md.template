@@ -1,0 +1,114 @@
+# <PROJECT_NAME>
+
+<ONE_LINE_PROJECT_DESCRIPTION>
+
+> This CLAUDE.md is the orientation file for AI coding assistants. Anything
+> load-bearing for daily work goes here. Anything deeper goes in the docs
+> this file points at.
+
+## Read before changing anything
+
+1. `docs/ARCHITECTURE.md` — source of truth for what this project is,
+   how it's structured, and what's explicitly out of scope.
+2. `docs/capabilities/WORKFLOW.md` — how new capabilities are designed,
+   built, and reviewed. The steady-state process.
+3. `docs/DECISIONS.md` — ADRs. Past decisions you must respect. Don't
+   relitigate them in code review; relitigate them here.
+
+If you're about to start work on something specific, also read the
+relevant capability doc in `docs/capabilities/` — the most recent ones
+describe what's currently being built or was recently shipped.
+
+## How work happens
+
+Ticket-driven. Tickets are markdown files in `tickets/open/` (frontmatter
+plus body sections per the format in `docs/TICKET_FORMAT.md` if present,
+or follow the existing tickets as examples). Disk is the source of
+truth for tickets.
+
+**For implementing filed tickets** → run the `/tickets` slash command.
+See `.claude/commands/tickets.md` for the full procedure
+(prioritization, clarification, proposals, closing).
+
+**For designing a new capability** → see `prompts/CAPABILITY_DESIGN.md`.
+Don't start implementing a new capability without a capability doc in
+`docs/capabilities/`.
+
+**For periodic doc-drift correction** → see
+`prompts/ARCHITECTURE_REVIEW.md`. Run every few capabilities.
+
+**For multi-ticket buildout cleanup** → see `prompts/CONSOLIDATION_PASS.md`.
+Run after a batch of related tickets that grew faster than the seams got
+smoothed.
+
+## Constraints worth remembering on every change
+
+<!--
+INSTALLER NOTE: replace this list with project-specific constraints
+extracted from the architecture documentation. Examples below are
+illustrative only — do not leave them in the installed file.
+-->
+
+- <Project-specific constraint extracted from architecture docs>
+- <Another project-specific constraint>
+- <Add as many as are load-bearing; remove this comment block>
+
+## Things you should do proactively
+
+- Run tests after meaningful changes. Add tests for new logic where the
+  project has a test convention.
+- Append to `docs/DECISIONS.md` when you make a non-obvious choice. The
+  format is short — a few sentences per ADR, in the style of the
+  existing entries.
+- Update foundational docs (`ARCHITECTURE.md` and any other source-of-truth
+  docs) as *part of* the capability that changes them, not as a separate
+  later cleanup pass.
+- Push back when the operator asks for something that contradicts the
+  architecture. Either the request is wrong, or the architecture needs
+  to change deliberately (which is itself a conversation, not a quiet
+  edit).
+
+## Things you should never do without asking
+
+- Change foundational docs (`ARCHITECTURE.md`, equivalent) to make a
+  ticket easier. The docs constrain the code, not the other way around.
+- Expand a ticket's scope. If you find related work, file new tickets.
+- Add a dependency not already declared in the project's manifest
+  (`package.json`, `pyproject.toml`, `go.mod`, etc.).
+- Skip the operator validation section when closing a ticket. Even if
+  validation is just "none — fully automated," say so explicitly.
+- Pre-design capabilities ahead of the one you're currently building.
+  The shape of capability #N+1 should be informed by what you learn
+  building capability #N.
+
+## Where things live
+
+<!--
+INSTALLER NOTE: update this tree to reflect the actual project layout.
+Keep TicketSmith-specific entries (tickets/, docs/capabilities/,
+prompts/, .claude/commands/) but add the project's own folders.
+-->
+
+```
+<project-root>/
+├── <project-source-folders>/      # the project's own code
+├── tickets/
+│   ├── open/                      # active tickets
+│   └── closed/                    # resolved tickets (never deleted)
+├── docs/
+│   ├── ARCHITECTURE.md            # source of truth
+│   ├── DECISIONS.md               # append-only ADR log
+│   └── capabilities/
+│       ├── WORKFLOW.md            # the steady-state process
+│       ├── TEMPLATE.md            # capability doc template
+│       └── NN-name.md             # one per capability built
+├── prompts/
+│   ├── CAPABILITY_DESIGN.md       # design prompt for new capabilities
+│   ├── CONSOLIDATION_PASS.md      # cleanup after multi-ticket builds
+│   └── ARCHITECTURE_REVIEW.md     # periodic doc-drift correction
+└── .claude/
+    └── commands/
+        └── tickets.md             # the /tickets slash command
+```
+
+When in doubt, read the docs and ask before deviating.
