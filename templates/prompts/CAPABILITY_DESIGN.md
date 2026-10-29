@@ -79,21 +79,33 @@ When all open questions are either answered or explicitly punted, set
 the doc's Status to "tickets-generated" (you'll generate them next).
 
 STEP 4: Generate the ticket files.
-Create ticket markdown files in tickets/open/, one per ticket listed
-in the capability doc. Use the next available ticket numbers (read
-existing ticket numbers in tickets/open/ and tickets/closed/, take
-max + 1, increment from there). Follow the markdown format from the
-project's existing tickets (or docs/TICKET_FORMAT.md if it exists).
+Create one ticket per entry in the capability doc's tickets list,
+in dependency order, with the ticket script — never by hand, and
+never by numbering files yourself:
 
-For each ticket:
-- Title and type and priority from the capability doc's tickets list
+  node .claude/skills/tickets/scripts/tickets.mjs create \
+    --title "…" --type … --priority … --size … \
+    --capability NN-<capability-name> --depends <ids> --source agent
+
+The script allocates the id, writes the frontmatter and scaffolds the
+body sections. Read .claude/skills/tickets/reference.md for the
+format, then fill each ticket's body:
 - Description that gives a future AI session enough context to
-  implement without re-reading this whole conversation
-- Acceptance criteria as concrete, checkable items
-- Reference back to the capability doc by path
-- Initial status: open
+  implement without re-reading this whole conversation, citing the
+  capability doc sections it implements (by path and §)
+- Acceptance criteria as concrete, checkable items. Prefix with
+  (operator) only a criterion a human eye is the ONLY instrument for;
+  anything the implementer can run, it runs.
+- Notes, and an Operator validation section saying what will need
+  checking and by whom
+- For a bug: Steps to reproduce, Expected vs actual. For a design
+  ticket: Options considered, Open questions.
 
-Show me the list of ticket files created.
+Then update the capability doc's tickets list with the real ids, and
+run `tickets.mjs validate` — it must report no errors. Show me the
+list of tickets created and the output of
+`tickets.mjs waves NN-<capability-name>`, which shows the build order
+the dependencies imply.
 
 STEP 5: Stop and hand off.
 Don't start implementing. The implementation happens in a fresh

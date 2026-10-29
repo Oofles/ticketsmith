@@ -55,11 +55,41 @@ The artifacts are:
   any code is written.
 - **Tickets** that describe specific implementation work, scoped to
   one focused session.
-- **Slash commands and prompts** that encode how the AI should approach
+- **A slash command and prompts** that encode how the AI should approach
   recurring kinds of work.
 
 None of these are clever. The cleverness is in the discipline of
 keeping them up to date and trusting them over conversation history.
+
+## Mechanics are a script; judgement is the AI's
+
+A discipline written only as prose is a discipline the AI can skip
+under pressure — and it skips it exactly when it matters: the criterion
+ticked because the work "obviously" meets it, the audit postponed
+because the next capability is more interesting, the dependency order
+re-guessed from ticket prose and guessed slightly differently each
+session.
+
+So the kit splits the work along one line. Everything **mechanical** —
+allocating ids, computing which tickets are ready from their declared
+dependencies, moving files, validating the format, refusing a close
+whose criteria are unchecked — is done by `tickets.mjs`, deterministically
+and for zero tokens. Everything **judgemental** — what a ticket means,
+whether the work genuinely meets a criterion, what to write in the
+Resolution, whether the design was wrong — is the AI's, and the script
+never pretends to decide it.
+
+The script's refusals are where the disciplines bite. It will not close
+a ticket with an unchecked box, will not accept an operator check
+without a dated result, and will not hand over work in the next
+capability until the last one's drift audit is recorded. None of these
+have a quiet override. The ones that can be overridden at all (`--force`
+on an audit) record that they were.
+
+This also removes a tax that grows with the project. Ordering a backlog
+by reading every open ticket is fine at eight tickets and broken at
+sixty; the script reads frontmatter, not prose, and answers the same way
+every time.
 
 ## The five disciplines
 
@@ -146,6 +176,19 @@ reflection step captures what you learned, in the capability doc,
 so the next capability is informed by reality rather than design
 intention.
 
+REFLECT is a drift audit, not a diary entry. Re-read the design
+sections the capability's tickets cited, list every place the
+implementation differs, and resolve each one: either the code was
+wrong (file a ticket) or the design was wrong (amend the doc and record
+why). Never neither. More than three divergences means the design is
+stale, and the next step is a design session, not more tickets. The
+next capability does not start until the audit is recorded.
+
+Validation follows the same honesty. The operator's eyes are spent on
+what only eyes can judge — does it look right, does it read, does it
+feel right. Anything the AI can check itself, it checks, and writes
+down what the check proved.
+
 ## What this is and isn't
 
 **TicketSmith is:**
@@ -160,7 +203,8 @@ intention.
 - A code generator
 - A project management tool (no kanban, no burndown, no time tracking)
 - A replacement for thinking about your architecture
-- Specific to any language, framework, or AI assistant
+- Specific to any language or framework (it is built for Claude Code,
+  and needs Node.js and git for its one script)
 - Multiplayer (it assumes one operator, though nothing fundamentally
   blocks teams from using it)
 
@@ -203,6 +247,16 @@ tickets that overlapped, abstractions that contradicted each other,
 docs that drifted from code. The disciplines in this document evolved
 in response to those specific failures. Each one solves a real problem
 that occurred at least twice before the discipline was added.
+
+The kit was then used to build Lost Soles, a phone-first running app,
+across hundreds of tickets and nineteen capabilities. That second
+project is where the kit grew its machinery: structured dependencies
+once the backlog outgrew reading every ticket, the `deferred` state
+once tickets started waiting on upstream fixes, the drift audit once
+capabilities began closing with their designs quietly falsified, and
+parallel waves once tickets were small and well-declared enough to
+build side by side. Each of those, again, answered a failure that had
+already happened.
 
 The kit is what's left when you extract the methodology from any one
 project's specifics. It should work on any sufficiently long-lived

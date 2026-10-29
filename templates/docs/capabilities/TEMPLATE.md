@@ -86,12 +86,17 @@ generate tickets while questions are still open.
 Numbered list of tickets this capability decomposes into. Format:
 
 ```
-- NNNN: <title> — <one-line description>
+- NNNN: <title> — <type>, size <s|m>, depends on <NNNN, … | nothing> — <one-line description>
 ```
 
-Aim for tickets sized so each is a focused 30 minute - 2 hour session.
-If a ticket sounds bigger than that, split it. If a ticket sounds
-smaller (5 minutes of mechanical edits), merge it with a related one.
+Aim for tickets sized so each is a focused 30 minute - 2 hour session
+(`size: m`). If a ticket sounds bigger than that, split it — `size: l`
+is not a valid plan. If a ticket sounds smaller (5 minutes of
+mechanical edits), merge it with a related one.
+
+Declare every ordering you already know as a dependency. The order
+tickets are built in — and which ones can be built in parallel — is
+computed from these, not re-read from prose.
 
 ## Acceptance for the capability as a whole
 
@@ -106,8 +111,6 @@ Other capabilities or tickets this depends on. If this depends on
 something unbuilt, either build that first or note what assumptions
 you're making about it.
 
-## Notes from implementation
+## REFLECT — notes from implementation
 
-(Appended after the capability ships. What surprised you? What would
-you do differently? What's the next capability that should build on
-this?)
+_Filled in at the REFLECT step, during the drift audit — see `docs/capabilities/AUDIT.md` §6 for what goes here. The audit refuses to record while this line is all there is._

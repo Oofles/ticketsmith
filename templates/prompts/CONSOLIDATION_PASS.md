@@ -173,8 +173,9 @@ After triage, paste this to execute:
 ```
 Here's the triage from the audit report. For each item marked
 "address now," implement the fix. For each item marked "file as
-ticket," create a properly formatted ticket markdown file in
-tickets/open/ following the project's ticket format.
+ticket," create it with `node .claude/skills/tickets/scripts/tickets.mjs
+create … --source agent` and write its body per
+.claude/skills/tickets/reference.md. Never number a ticket by hand.
 
 Approach:
 - Group fixes by file to minimize churn.

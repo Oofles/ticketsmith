@@ -18,7 +18,8 @@
 
 ```
 You're going to install TicketSmith into this project. TicketSmith is a
-markdown-based design-and-build methodology that lives alongside the
+markdown-based design-and-build methodology, plus one dependency-free
+Node script that does the ticket mechanics. It lives alongside the
 existing code without touching it.
 
 TICKETSMITH LOCATION: <FILL IN ONE>
@@ -39,12 +40,19 @@ you're installing:
   docs/METHODOLOGY.md
   docs/TICKET_FORMAT.md
   templates/CLAUDE.md.template
-  templates/.claude/commands/tickets.md
+  templates/.claude/skills/tickets/SKILL.md
+  templates/.claude/skills/tickets/reference.md
   templates/docs/capabilities/WORKFLOW.md
   templates/docs/capabilities/TEMPLATE.md
+  templates/docs/capabilities/AUDIT.md
+  templates/docs/capabilities/WAVES.md
   templates/prompts/CAPABILITY_DESIGN.md
   templates/prompts/CONSOLIDATION_PASS.md
   templates/prompts/ARCHITECTURE_REVIEW.md
+
+Also confirm templates/.claude/skills/tickets/scripts/tickets.mjs
+exists. Do not read it end to end; it is installed verbatim, and its
+usage text (run it with no arguments) is all you need.
 
 Then summarize back to me, briefly:
 - What TicketSmith is (one paragraph)
@@ -68,15 +76,23 @@ Discover the target project's structure:
   4. If `docs/` (or similar named documentation folder) exists, list
      its contents. Read any file that looks like architecture, design,
      contributing, or decisions documentation.
-  5. If `.claude/commands/` exists, list contents. Note any existing
-     slash commands, especially `tickets.md` if present.
-  6. Look for existing ticketing or issue-tracking systems:
+  5. If `.claude/commands/` or `.claude/skills/` exists, list contents.
+     Note any existing slash commands or skills, especially anything
+     named `tickets` — `.claude/commands/tickets.md` and
+     `.claude/skills/tickets/` both claim `/tickets`.
+  6. Check the prerequisites for the ticket script: run
+     `node --version` (Node.js 18 or later is required) and
+     confirm the project is a git repository (`git rev-parse
+     --show-toplevel`). Note the project's own gate commands — tests,
+     typecheck, lint, build — from its manifest and CI config; they
+     feed AUDIT.md and WAVES.md later.
+  7. Look for existing ticketing or issue-tracking systems:
      - `tickets/` directory in any format
      - `issues/` directory
      - `.github/ISSUE_TEMPLATE/`
      - GitHub Issues (note in summary, but don't fetch)
      - Any other tracking convention you spot
-  7. Identify project type (language, framework, primary purpose)
+  8. Identify project type (language, framework, primary purpose)
      from the obvious signals (package.json, pyproject.toml, Cargo.toml,
      go.mod, etc.). One sentence summary.
 
@@ -91,8 +107,15 @@ Then produce a Discovery Report with this exact structure:
   ## Existing CLAUDE.md
   [exists / does not exist; if exists, summarize what's in it]
 
-  ## Existing slash commands
+  ## Existing slash commands and skills
   [list, or "none"]
+
+  ## Prerequisites
+  [Node.js version found, or "not installed"; git repository yes/no]
+
+  ## Gate commands
+  [the project's test / typecheck / lint / build commands, with where
+   each was found, or "none found"]
 
   ## Existing ticketing system
   [describe in detail if found, or "none detected"]
@@ -151,13 +174,24 @@ BRANCH D — Existing CLAUDE.md detected.
   CLAUDE.md says one thing, TicketSmith says another), surface them
   for my decision.
 
-BRANCH E — Existing `.claude/commands/tickets.md` detected.
+BRANCH E — Existing `.claude/commands/tickets.md` or
+`.claude/skills/tickets/` detected.
   REFUSE to silently overwrite. Show me the existing file's first 20
   lines, describe what it does, and ask explicitly whether to:
     (i) Overwrite (existing content is replaced)
-    (ii) Rename existing to `tickets.legacy.md` and install fresh
+    (ii) Move the existing file(s) out of `.claude/` (e.g. to
+         `docs/legacy/`) and install fresh — renaming in place is not
+         enough, since anything left in `.claude/commands/` or
+         `.claude/skills/` can still register a command
     (iii) Abort install
   Wait for explicit choice. Do not assume.
+
+BRANCH F — Prerequisites missing.
+  If Node.js 18 or later is not available, or the project is not
+  a git repository, the ticket script cannot run. Stop and tell me
+  which is missing. Do not install around it: TicketSmith without its
+  script is not a lighter TicketSmith, it is the rules without the
+  enforcement.
 
 Once all relevant branches are resolved, summarize the resolved
 prerequisites and proceed to Phase 4.
@@ -193,6 +227,17 @@ The adaptations are how TicketSmith fits this project. Specifically:
   templates/docs/capabilities/TEMPLATE.md → docs/capabilities/TEMPLATE.md
     Install verbatim. This is the methodology; it doesn't adapt.
 
+  templates/docs/capabilities/AUDIT.md → docs/capabilities/AUDIT.md
+    Adapt ONLY the `audit-checks` block in §1 (its INSTALLER NOTE says
+    how): one `<check-id>: <shell command>` line per gate command found
+    in Phase 2. Never invent a command the project does not have. Remove
+    the INSTALLER NOTE. Everything else installs verbatim.
+
+  templates/docs/capabilities/WAVES.md → docs/capabilities/WAVES.md
+    Adapt ONLY §7 "The gate" (its INSTALLER NOTE says how): worktree
+    setup and the gate commands, usually the same as AUDIT.md's block.
+    Remove the INSTALLER NOTE. Everything else installs verbatim.
+
   templates/prompts/CAPABILITY_DESIGN.md → prompts/CAPABILITY_DESIGN.md
     Install verbatim. The prompt is generic by design.
 
@@ -202,8 +247,13 @@ The adaptations are how TicketSmith fits this project. Specifically:
   templates/prompts/ARCHITECTURE_REVIEW.md → prompts/ARCHITECTURE_REVIEW.md
     Install verbatim.
 
-  templates/.claude/commands/tickets.md → .claude/commands/tickets.md
-    Install verbatim. The command's behavior is uniform.
+  templates/.claude/skills/tickets/SKILL.md → .claude/skills/tickets/SKILL.md
+  templates/.claude/skills/tickets/reference.md → .claude/skills/tickets/reference.md
+  templates/.claude/skills/tickets/scripts/tickets.mjs → .claude/skills/tickets/scripts/tickets.mjs
+    Install all three verbatim — copy the files, do not retype them.
+    The skill's behavior is uniform, and the SKILL.md frontmatter is
+    load-bearing: a skill whose frontmatter does not parse is silently
+    skipped, and /tickets never appears.
 
   (new) docs/DECISIONS.md
     Create empty with just a header. Operator will append ADRs as
@@ -211,6 +261,11 @@ The adaptations are how TicketSmith fits this project. Specifically:
 
   (new) tickets/open/.gitkeep, tickets/closed/.gitkeep
     Create empty placeholders so the folders are tracked by git.
+
+  (generated) tickets/index.json
+    Not written by hand. Generated in Phase 5 by running
+    `node .claude/skills/tickets/scripts/tickets.mjs index`, and
+    committed.
 
 If branch B (architecture doc) was resolved by creating a new
 ARCHITECTURE.md, include that in the plan as well.
@@ -236,12 +291,16 @@ Apply changes in this order so a partially-failed install is still
 useful:
 
   1. Create folder structure (tickets/, docs/capabilities/, prompts/,
-     .claude/commands/ as needed)
-  2. Install verbatim files (templates that don't adapt)
+     .claude/skills/tickets/scripts/ as needed)
+  2. Install verbatim files (templates that don't adapt), copying the
+     skill files byte for byte
   3. Create new files (DECISIONS.md, gitkeeps)
-  4. Adapt and install CLAUDE.md
-  5. If architecture doc was created in Phase 3, install it
-  6. If roadmap design was done in Phase 3, install the roadmap doc
+  4. Adapt and install AUDIT.md and WAVES.md
+  5. Adapt and install CLAUDE.md
+  6. If architecture doc was created in Phase 3, install it
+  7. If roadmap design was done in Phase 3, install the roadmap doc
+  8. Run `node .claude/skills/tickets/scripts/tickets.mjs index` to
+     generate tickets/index.json
 
 After each file is written, briefly confirm: "Wrote <path>."
 
@@ -255,8 +314,17 @@ After all files are written:
      - All files from the plan exist at their expected paths
      - No files were left half-written
      - `tickets/open/` and `tickets/closed/` exist (even if empty)
-     - `.gitignore` is sane (if the project has one, ensure
-       tickets/ folders aren't accidentally gitignored)
+     - `node .claude/skills/tickets/scripts/tickets.mjs validate`
+       exits 0, and running the script with no arguments prints its
+       usage
+     - The installed tickets.mjs is byte-identical to the kit's
+       (compare checksums)
+     - Each command in AUDIT.md's `audit-checks` block runs from the
+       project root. Report any that fail now — a gate that is
+       already red is a finding for me, not something to edit out
+     - `.gitignore` is sane: `tickets/` and `.claude/skills/` are not
+       ignored, and agent worktrees (`.claude/worktrees/` in Claude
+       Code) are
   2. Run `git status` and report what's new or changed.
   3. Produce a final summary with:
      - Installed files
@@ -270,6 +338,9 @@ After all files are written:
           design prompt
        c. If no open tickets exist yet, the next action is to design
           the first capability with prompts/CAPABILITY_DESIGN.md
+       d. Type `/tickets` once to confirm the skill registered — it
+          should appear with its argument hint. If it does not, the
+          SKILL.md frontmatter did not parse
      - A reminder that I should commit this install as a single commit
        with a message like `chore: install TicketSmith methodology`
 
@@ -279,8 +350,9 @@ Then stop. The install is complete.
 CONSTRAINTS THROUGHOUT
 ═══════════════════════════════════════════════════════════════════════
 
-- Never touch any source code. The kit is markdown only. Source code
-  changes are not part of an install.
+- Never touch any source code. The kit is markdown plus its own
+  ticket script under .claude/skills/tickets/; the project's code is
+  not part of an install.
 - Never silently overwrite an existing file. Confirm explicitly.
 - Never proceed past a phase without confirming the previous phase's
   output with me.
@@ -316,9 +388,15 @@ The opinionated positions the kit enforces during install are:
 
 - Tickets are markdown on disk, not anywhere else
 - Folder structure is fixed (`tickets/open/`, `tickets/closed/`,
-  `docs/capabilities/`, `prompts/`, `.claude/commands/`)
+  `docs/capabilities/`, `prompts/`, `.claude/skills/tickets/`)
 - Ticket frontmatter fields are fixed (no custom fields)
-- The `/tickets` slash command behavior is uniform across projects
+- The `/tickets` skill and its script are uniform across projects;
+  the only per-project parts are CLAUDE.md, AUDIT.md's checks, and
+  WAVES.md's gate
+- Ticket mechanics (ids, ordering, moves) go through the script, never
+  by hand
+- A capability closes with its drift audit before the next one starts
+- Node.js and git are required
 - Closed tickets move, never get deleted
 - `DECISIONS.md` is append-only
 

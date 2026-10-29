@@ -60,7 +60,7 @@ Read these:
 
 If TicketSmith is not yet installed, also read:
   - TICKETSMITH_LOCATION/docs/METHODOLOGY.md
-  - TICKETSMITH_LOCATION/docs/capabilities/WORKFLOW.md (the same file
+  - TICKETSMITH_LOCATION/templates/docs/capabilities/WORKFLOW.md (the same file
     that gets installed)
 
 Briefly confirm what you've read so I know we're working from the same

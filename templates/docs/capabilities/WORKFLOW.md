@@ -36,12 +36,48 @@ Each capability follows the same five-step cycle:
                    updated with implementation notes
 4. USE           → run the project against real work for at least
                    one session
-5. REFLECT       → append "Notes from implementation" to the
-                   capability doc, mark Status: shipped
+5. REFLECT       → the drift audit passes (`/tickets audit`), the
+                   REFLECT section is written, Status: shipped
 ```
 
 Don't skip steps 4 and 5. They're where the project actually gets
 better, because they're where reality contradicts the design.
+
+## Capability close: the drift audit
+
+A capability is not done when its tickets are closed — it is done when
+`docs/capabilities/AUDIT.md` passes. The governing rule: *if the
+implementation diverged from the design doc, either the code changes
+or the doc changes, never neither.*
+
+This is enforced, not requested. `/tickets next` refuses to hand over
+work in a later capability while an earlier one with tickets has no
+recorded audit, and the audit refuses to record without an explicit
+statement of what diverged (or that nothing did) and a REFLECT section
+with substance. More than three divergences fails the audit: the
+design is stale, and the fix is a DESIGN session, not more tickets.
+
+## Tickets, briefly
+
+The full format is in `.claude/skills/tickets/reference.md`. What
+matters for capability work:
+
+- Every ticket names its `capability`, so a ticket leads back to its
+  design and the audit can find every ticket a capability owns.
+- Planned ordering goes in `depends_on` at ticket-write time; walls
+  hit mid-build go in `blocked_by`. Keeping them apart is what lets
+  REFLECT tell foreseen order from discovered order.
+- `size: m` (30 minutes to 2 hours) is the target. `size: l` means
+  "split it", and `/tickets next` will not start one.
+- A ticket waiting on the outside world — an upstream fix, a third
+  party — is `deferred`, with a reason and a runnable re-check, not
+  left open to be rediscovered every session.
+- The mechanics (ids, ordering, moves, validation) belong to
+  `.claude/skills/tickets/scripts/tickets.mjs`. Don't do them by hand.
+
+A capability with several independent tickets can be built in
+parallel waves — one agent per ticket, in its own worktree — following
+`docs/capabilities/WAVES.md`.
 
 ## Where design happens
 
@@ -81,8 +117,11 @@ implementation proposals until the design doc is filled out.
 3. Iterate on filling out the capability doc from `TEMPLATE.md`.
 4. Resolve open questions or explicitly punt them with stated defaults
    before tickets are generated.
-5. Generate the ticket markdown files in `tickets/open/`.
-6. `/clear`. Fresh session. Run `/tickets` to implement.
+5. Create the tickets with `/tickets create` (one per ticket in the
+   doc, with `capability`, `size` and `depends_on` set), write their
+   bodies, and get `/tickets validate` clean.
+6. `/clear`. Fresh session. Run `/tickets` (or `/tickets wave <NN>`)
+   to implement.
 
 The two `/clear`s matter. Design context contaminates implementation
 decisions; implementation context contaminates the next capability's
@@ -130,7 +169,7 @@ the top:
   implementation pending
 - **building** — at least one ticket closed, more in progress
 - **shipped** — all tickets closed, capability used on real work at
-  least once, "Notes from implementation" section appended
+  least once, REFLECT section written, drift audit recorded
 
 A doc in **shipped** state is historical record. Don't edit it for
 style later. If you want to revise the capability, write a new
@@ -159,6 +198,10 @@ capability is good. The first time you'll find out is when the *next*
 capability is built on top of a shaky one. Always exercise the
 capability against real work before considering it shipped.
 
+**Forcing the audit.** `--force` exists for emergencies and records
+`verdict: forced`, never `pass`. A project whose audit history is a
+column of `forced` has stopped auditing and kept the paperwork.
+
 **Designing five capabilities ahead.** The temptation to spec out the
 next five capabilities now is strong and almost always wrong. Each
 capability's design should be informed by the previous one's reality.
@@ -167,14 +210,21 @@ The further ahead you plan, the more of the plan you'll throw away.
 **Closing tickets without honest operator validation.** Tickets close
 with a Resolution section AND an Operator validation section. If the
 validation section is always "None," nobody is checking the work.
-That's not validation; that's hope.
+That's not validation; that's hope. The opposite failure is real too:
+routing to the operator a check the agent could have run itself. The
+operator's eyes are for perception — does it look right, does it read.
+A status code, a database row or a CLI's output is the agent's smoke
+test to run and record.
 
 ## Quick reference
 
 - **Starting a new capability?** → `prompts/CAPABILITY_DESIGN.md`
 - **Filling out a capability doc?** → `docs/capabilities/TEMPLATE.md`
-- **Tickets ready to implement?** → `.claude/commands/tickets.md`
-  (`/tickets` slash command)
+- **Tickets ready to implement?** → `/tickets` (the skill at
+  `.claude/skills/tickets/`), or `/tickets wave <NN>` to build a
+  capability in parallel (`docs/capabilities/WAVES.md`)
+- **Capability's tickets all closed?** → `/tickets audit <NN>`
+  (`docs/capabilities/AUDIT.md`)
 - **Need an architecture review?** → `prompts/ARCHITECTURE_REVIEW.md`
   in a fresh chat surface
 - **Cleaning up after a multi-ticket buildout?** →

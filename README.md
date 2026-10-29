@@ -6,10 +6,9 @@
 
 ## What this is
 
-TicketSmith is a **methodology kit**, not a tool. It's a set of prompts,
-templates, and conventions that you install into a software project so that
-work with an AI coding assistant (Claude Code, Cursor, etc.) follows a
-consistent shape:
+TicketSmith is a **methodology kit**. It's a set of prompts, templates,
+conventions, and one small script that you install into a software project
+so that work with Claude Code follows a consistent shape:
 
 - **Tickets are markdown files on disk.** No database, no GitHub Issues, no
   Jira. Disk is the source of truth.
@@ -21,7 +20,13 @@ consistent shape:
   design document before any tickets are filed. Tickets are filed before
   any code is written. Code is written against tickets, not against
   conversation.
-- **The AI asks clarifying questions first.** The `/tickets` command
+- **The mechanics are a script; the judgement is the AI's.** A
+  dependency-free Node script owns ticket ids, dependency ordering, file
+  moves, and validation. It refuses to close a ticket with unmet criteria
+  or an unverified operator check, and refuses to start the next
+  capability until the last one has passed its drift audit. The AI decides
+  what a ticket means and whether the work is genuinely done.
+- **The AI asks clarifying questions first.** The `/tickets` skill
   doesn't start coding the moment it has a ticket. It reads the
   architecture docs, surfaces ambiguity, proposes approaches for
   non-obvious solutions, and gets your input before committing.
@@ -39,10 +44,16 @@ decisions — *outlive any single session*. Every new session reads the docs,
 not the conversation history.
 
 The methodology was extracted from a personal CTF automation framework
-that survived 30+ implementation sessions without architectural drift.
-The discipline works in any language, any framework, any project shape.
-The kit is intentionally markdown-only so it imposes nothing on your
-tech stack.
+that survived 30+ implementation sessions without architectural drift,
+then hardened over 300+ tickets on a second project, where rules written
+only as prose were the ones that got skipped. The discipline works in any
+language, any framework, any project shape.
+
+The kit imposes one requirement on your environment: **Node.js
+18 or later** and **git**, for `tickets.mjs`. The script uses only
+Node's standard library — no `package.json`, no `npm install` — so it
+runs the same in a Python, Go, or Rust project as in a JavaScript one.
+Everything else is markdown.
 
 ## What you get
 
@@ -52,22 +63,29 @@ After installing TicketSmith into a project:
 your-project/
 ├── CLAUDE.md                          # merged orientation file
 ├── tickets/
-│   ├── open/                          # active tickets
-│   └── closed/                        # resolved tickets (historical)
+│   ├── open/                          # active tickets (open, blocked, deferred)
+│   ├── closed/                        # resolved tickets (historical)
+│   └── index.json                     # generated index, committed
 ├── docs/
 │   ├── ARCHITECTURE.md                # exists already, or designed during install
 │   ├── DECISIONS.md                   # append-only ADR log
 │   └── capabilities/
 │       ├── WORKFLOW.md                # the steady-state process
 │       ├── TEMPLATE.md                # capability doc template
+│       ├── AUDIT.md                   # capability-close drift audit
+│       ├── WAVES.md                   # parallel build protocol
 │       └── NN-name.md                 # one per capability you build
 ├── prompts/
 │   ├── CAPABILITY_DESIGN.md           # design prompt for new capabilities
 │   ├── CONSOLIDATION_PASS.md          # cleanup after multi-ticket builds
 │   └── ARCHITECTURE_REVIEW.md         # periodic doc-drift correction
 └── .claude/
-    └── commands/
-        └── tickets.md                 # the /tickets slash command
+    └── skills/
+        └── tickets/
+            ├── SKILL.md               # the /tickets skill
+            ├── reference.md           # ticket format + close procedure
+            └── scripts/
+                └── tickets.mjs        # ids, ordering, moves, validation
 ```
 
 Your code is untouched. The kit installs alongside whatever you've got.
@@ -109,9 +127,13 @@ The two prompts you'll use most:
   a fresh Claude Code session, fill in the placeholders, iterate on the
   design doc, then `/clear` and run `/tickets` to implement.
 - **To work through filed tickets:** in a fresh session, run `/tickets`.
-  Claude reads the docs, prioritizes the open tickets, and works through
-  them — asking clarifying questions and proposing approaches for
-  non-obvious work.
+  Claude reads the docs, asks the script for the ready order, and works
+  through the tickets — asking clarifying questions and proposing
+  approaches for non-obvious work. `/tickets wave <NN>` builds a
+  capability's independent tickets in parallel, one agent per ticket.
+- **When a capability's tickets are all closed:** run `/tickets audit <NN>`.
+  The drift audit checks the implementation against the design, and the
+  next capability can't start until it passes.
 
 Every few capabilities (or every few months of active work), use
 `prompts/ARCHITECTURE_REVIEW.md` to catch documentation drift before it
@@ -121,7 +143,7 @@ seams got smoothed, use `prompts/CONSOLIDATION_PASS.md` to clean up.
 ## Reading further
 
 - [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) — the philosophy in detail
-- [`docs/TICKET_FORMAT.md`](docs/TICKET_FORMAT.md) — the ticket markdown spec
+- [`docs/TICKET_FORMAT.md`](docs/TICKET_FORMAT.md) — the ticket markdown spec, and why each field exists
 - [`prompts/INSTALL.md`](prompts/INSTALL.md) — the AI install prompt
 - [`templates/`](templates/) — what gets installed into your project
 

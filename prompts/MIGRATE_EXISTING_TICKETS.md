@@ -54,10 +54,17 @@ Read these files from the TicketSmith location:
   README.md
 
 Summarize back to me the TicketSmith ticket format briefly, especially:
-- Frontmatter fields (id, slug, title, type, priority, status, created, closed)
-- Required body sections (Description, Acceptance criteria, Notes)
-- Bug-specific sections (Steps to reproduce, Expected vs actual)
-- The numbering scheme (sequential, zero-padded 4-digit)
+- Frontmatter fields (id, slug, title, type, priority, status, size,
+  capability, depends_on, blocked_by, source, created, started,
+  deferred, closed) and which are required where
+- Required body sections (Description, Acceptance criteria, Notes,
+  Operator validation)
+- Type-specific sections (bug: Steps to reproduce, Expected vs actual;
+  design: Options considered, Open questions)
+- The numbering scheme (sequential integer, zero-padded to 4 digits in
+  filenames)
+- That the format is machine-validated: the kit's ticket script will
+  check every migrated file
 
 Wait for me to confirm before proceeding.
 
@@ -145,13 +152,33 @@ in a temporary working area.
 For each source ticket, produce a TicketSmith-format file:
 
   - Filename: NNNN-slug.md per TicketSmith conventions
-  - Frontmatter with all required fields per the spec
+  - Frontmatter with all required fields per the spec, mapped
+    conservatively:
+      - `status`: open, blocked (only with a real `blocked_by`) or
+        closed. Use `deferred` only if the source says the ticket is
+        waiting on something outside the project, and then write its
+        `## Deferred` section with a reason and a runnable re-check
+      - `size`: your honest estimate; `l` where the ticket is plainly
+        too big (it will be split later, not now)
+      - `capability`: null unless the source groups tickets into
+        something that maps to a capability doc that will exist
+      - `depends_on`: only dependencies the source states explicitly,
+        as ticket ids. Never infer them
+      - `blocked_by`: [] unless the source names a blocking ticket
+      - `source`: operator
+      - `created` / `closed`: from the source where known
   - Body with Description, Acceptance criteria (best-effort if not in
-    source), Notes
+    source), Notes, Operator validation
   - For bugs: Steps to reproduce, Expected vs actual (best-effort)
-  - For closed tickets: Resolution section, Operator validation
-    section (set to "Migrated from <source>; original validation
-    state unknown" if there's no equivalent in source)
+  - For closed tickets: a Resolution section, and an Operator
+    validation section (set to "Migrated from <source>; original
+    validation state unknown" if there's no equivalent in source).
+    Acceptance criteria on a closed ticket must all be checked; carry
+    over criteria the source marks done, and for ones it does not,
+    strike them through (`- [x] ~~criterion~~ — not recorded as met in
+    <source>`) and say so in the Resolution. Never mark a migrated
+    criterion `(operator)`: an operator criterion needs a dated result
+    nobody can supply after the fact
 
 If a source ticket's information is too sparse to map cleanly to
 TicketSmith's required sections, mark it with a placeholder Notes
@@ -176,9 +203,12 @@ Once the preview is approved:
      - No filename collisions
      - All ticket numbers are sequential with no gaps (if renumbering
        was chosen)
-     - Frontmatter parses cleanly for every file (you can validate
-       by reading each file and confirming it has valid YAML
-       frontmatter)
+     - The kit's ticket script validates the result. From the project
+       root, run:
+         TICKETS_ROOT="$PWD" node <TICKETSMITH_LOCATION>/templates/.claude/skills/tickets/scripts/tickets.mjs validate
+       It must exit 0. Fix every error it reports; do not edit the
+       script. (If TicketSmith is only reachable by URL, fetch that
+       one file to a temporary location first.)
 
 Produce a verification report:
 
